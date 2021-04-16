@@ -14,3 +14,17 @@
 
 #### 3. USER:
 ##### - User can see the only properties verified by the admin.
+
+
+### APIs in the system:
+#### - Add Property
+#### - Update Property
+#### - Approve Property
+#### - Search Property
+#### - Get Property
+
+### Setup project in IntelliJ or in eclipse:
+#### - Clone the project in your machine 
+#### - Load pom.xml file from root directory
+#### - Change database properties from application.properties
+#### - Simply run the project from your IDE
