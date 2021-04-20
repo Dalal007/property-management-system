@@ -1,7 +1,6 @@
 package com.narola.property.service;
 
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
-import com.narola.property.dao.PropertyCriteria;
+import com.narola.property.dao.PropertyDAOImpl;
 import com.narola.property.entity.Property;
 import com.narola.property.entity.Role;
 import com.narola.property.entity.User;
@@ -11,14 +10,10 @@ import com.narola.property.model.PropertySearchResponse;
 import com.narola.property.repository.PropertyRepository;
 import com.narola.property.repository.UserRepository;
 import com.narola.property.security.UserUtils;
-import com.narola.property.service.PropertyService;
 
 import com.narola.property.serviceimpl.PropertyServiceImpl;
-import org.aspectj.lang.annotation.Before;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.*;
@@ -26,14 +21,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.sql.DriverManager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +33,7 @@ import java.util.Optional;
 @PrepareForTest(UserUtils.class)
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class JUnitTestCases {
+public class JUnitServiceTestCases {
 
     @Mock
     private PropertyRepository propertyRepository;
@@ -52,7 +42,7 @@ public class JUnitTestCases {
     private UserRepository userRepository;
 
     @Mock
-    private PropertyCriteria propertyCriteria;
+    private PropertyDAOImpl propertyDAOImpl;
 
     @InjectMocks
     PropertyServiceImpl propertyService;
@@ -121,7 +111,7 @@ public class JUnitTestCases {
         request.setSortOrder("ASC");
         request.setPropertyId(1);
 
-        Mockito.when(propertyCriteria.getPropertiesWithSearch(request.getSortBy(), request.getSortOrder(), request.getPageSize()
+        Mockito.when(propertyDAOImpl.getPropertiesWithSearch(request.getSortBy(), request.getSortOrder(), request.getPageSize()
                         , request.getKeyword(), request.getPropertyId(), request.getPageNo()))
                 .thenReturn(Collections.singletonList(property));
         List<PropertySearchResponse> list = propertyService.getAllProperties(request);

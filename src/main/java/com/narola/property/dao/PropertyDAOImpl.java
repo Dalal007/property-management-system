@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class PropertyCriteria {
+public class PropertyDAOImpl {
     private final String DEFAULT_SORT_BY = "propertyId";
 
     @Autowired

@@ -2,7 +2,6 @@ package com.narola.property.repository;
 
 
 import com.narola.property.entity.User;
-import com.narola.property.model.PropertySearchResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

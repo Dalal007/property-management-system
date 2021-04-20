@@ -1,18 +1,16 @@
 package com.narola.property.serviceimpl;
 
-import com.narola.property.dao.PropertyCriteria;
+import com.narola.property.dao.PropertyDAOImpl;
 import com.narola.property.entity.Property;
 import com.narola.property.model.AddUpdatePropertyRequest;
 import com.narola.property.model.PropertySearchRequest;
 import com.narola.property.model.PropertySearchResponse;
-import com.narola.property.model.PropertySearchResponseWrapper;
 import com.narola.property.repository.PropertyRepository;
 import com.narola.property.repository.UserRepository;
 import com.narola.property.security.UserUtils;
 import com.narola.property.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +24,7 @@ public class PropertyServiceImpl implements PropertyService {
     private UserRepository userRepository;
 
     @Autowired
-    private PropertyCriteria propertyCriteria;
+    private PropertyDAOImpl propertyDAOImpl;
 
     @Override
     public List<PropertySearchResponse> getAllVerifiedProperties() {
@@ -41,7 +39,7 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public List<PropertySearchResponse> getAllProperties(PropertySearchRequest request){
-        List<Property> propertyList=propertyCriteria.getPropertiesWithSearch(request.getSortBy()
+        List<Property> propertyList= propertyDAOImpl.getPropertiesWithSearch(request.getSortBy()
                 ,request.getSortOrder()
                 ,request.getPageSize()
                 ,request.getKeyword()
@@ -93,18 +91,4 @@ public class PropertyServiceImpl implements PropertyService {
     public void verifyProperty(int propertyId) {
         propertyRepository.verifyProperty(propertyId);
     }
-
-    /*private List<PropertySearchResponse> entityToModel(List<Property> productEntities) {
-        return productEntities.stream().map(w -> {
-            PropertySearchResponse response = new PropertySearchResponse();
-            response.setId(w.getPropertyId());
-            response.setName(w.getName());
-            response.setType(w.getType());
-            response.setPrice(Math.toIntExact(w.getPrice()));
-            response.setLocation(w.getLocation());
-            response.setVerified(w.isVerified());
-            response.setUserId(w.getUser().getUserId());
-            return response;
-        }).collect(Collectors.toList());
-    }*/
 }
