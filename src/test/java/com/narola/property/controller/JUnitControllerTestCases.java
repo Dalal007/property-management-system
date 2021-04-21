@@ -1,50 +1,77 @@
 package com.narola.property.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.narola.property.entity.Property;
 import com.narola.property.entity.User;
 import com.narola.property.model.AddUpdatePropertyRequest;
 import com.narola.property.model.PropertySearchRequest;
 import com.narola.property.model.PropertySearchResponse;
 import com.narola.property.model.PropertySearchResponseWrapper;
-import com.narola.property.security.UserUtils;
-
+import com.narola.property.repository.UserRepository;
+import com.narola.property.security.JwtUtil;
+import com.narola.property.security.MyEntryPoint;
+import com.narola.property.security.MyUserDetailsServiceImpl;
 import com.narola.property.service.PropertyService;
-import org.junit.Test;
+
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.*;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.util.Collections;
-import java.util.Objects;
+import java.util.*;
 
-//@SpringBootTest
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(UserUtils.class)
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+//@RunWith(PowerMockRunner.class)
+//@PrepareForTest(UserUtils.class)
+//@ExtendWith(MockitoExtension.class)
+//@MockitoSettings(strictness = Strictness.LENIENT)
+@WebMvcTest
+@AutoConfigureMockMvc
+//@RunWith(SpringRunner.class)
+//@MockBean({PropertyService.class, MyUserDetailsServiceImpl.class, JwtUtil.class, MyEntryPoint.class, UserRepository.class})
 public class JUnitControllerTestCases {
-
-
-    @Mock
+    @MockBean
     private PropertyService propertyService;
+    @MockBean
+    private MyUserDetailsServiceImpl myUserDetailsService;
+    @MockBean
+    private JwtUtil jwtUtil;
+    @MockBean
+    private MyEntryPoint entryPoint;
+    @MockBean
+    private UserRepository userRepository;
 
-    @InjectMocks
-    PropertyController propertyController;
+//    @InjectMocks
+//    PropertyController propertyController;
 
-    Property property = new Property();
-    User user = new User();
-    PropertySearchResponse propertySearchResponse = new PropertySearchResponse();
+    @Autowired
+    private MockMvc mockMvc;
 
 
-    @Test
-    public void add(){
+    Property property = null;
+    User user = null;
+    PropertySearchResponse propertySearchResponse = null;
+    AddUpdatePropertyRequest propertyRequest = null;
+    PropertySearchRequest request = null;
+    ObjectMapper objectMapper = null;
+    String jsonString;
+
+    @org.junit.jupiter.api.Test
+    public void add() throws Exception {
+        user = new User();
+        property = new Property();
+
         user.setUserId(1);
         user.setEnabled(true);
         user.setPassword("demo");
@@ -58,17 +85,27 @@ public class JUnitControllerTestCases {
         property.setLocation("ahmedabad");
         property.setUser(user);
 
-        AddUpdatePropertyRequest addUpdatePropertyRequest = new AddUpdatePropertyRequest(property.getPropertyId()
+        objectMapper = new ObjectMapper();
+        jsonString = objectMapper.writeValueAsString(property);
+
+        propertyRequest = new AddUpdatePropertyRequest(property.getPropertyId()
                 , property.getName(), property.getType(), property.getPrice(), property.getLocation(), property.isVerified()
                 , property.getUser().getUserId());
-        Mockito.when(propertyService.addProperty(addUpdatePropertyRequest)).thenReturn(property);
-        Property property1 = propertyController.addProperty(addUpdatePropertyRequest);
-        Assertions.assertEquals("ahmedabad", property1.getLocation());
+        Mockito.when(propertyService.addProperty(propertyRequest)).thenReturn(property);
+//        Property property1 = propertyController.addProperty(propertyRequest);
+//        Assertions.assertEquals("ahmedabad", property1.getLocation());
+        mockMvc.perform(MockMvcRequestBuilders.post("/properties")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(property.getName())))
+                .andReturn().getResponse().getContentAsString();
     }
 
     @Test
-    public void update(){
-        AddUpdatePropertyRequest propertyRequest = new AddUpdatePropertyRequest();
+    public void update() throws Exception {
+        propertyRequest = new AddUpdatePropertyRequest();
         propertyRequest.setUserId(10);
         propertyRequest.setVerified(true);
         propertyRequest.setPrice(5000000);
@@ -76,13 +113,23 @@ public class JUnitControllerTestCases {
         propertyRequest.setLocation("ahmedabad");
         propertyRequest.setType("bunglow");
         propertyRequest.setId(10);
+
+        objectMapper = new ObjectMapper();
+        jsonString = objectMapper.writeValueAsString(propertyRequest);
+
         Mockito.when(propertyService.updateProperty(Mockito.any())).thenReturn(property);
-        Property property1 = propertyController.updateProperty(propertyRequest);
-        Assertions.assertEquals("ahmedabad", propertyRequest.getLocation());
+        mockMvc.perform(MockMvcRequestBuilders.put("/properties")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(propertyRequest.getName())))
+                .andReturn().getResponse().getContentAsString();
     }
 
     @Test
-    public void approve(){
+    public void approve() throws Exception {
+        property = new Property();
         property.setPropertyId(1);
         property.setLocation("ahmedabad");
         property.setVerified(false);
@@ -90,15 +137,31 @@ public class JUnitControllerTestCases {
         property.setPrice(7000000);
         property.setName("4bhk");
 
+        objectMapper = new ObjectMapper();
+        jsonString = objectMapper.writeValueAsString(propertyRequest);
+
         PropertyController propertyController = Mockito.mock(PropertyController.class);
         Mockito.doNothing().when(propertyController).verifyProperty(property.getPropertyId());
-        propertyController.verifyProperty(property.getPropertyId());
-        Assertions.assertFalse(property.isVerified());
+        mockMvc.perform(MockMvcRequestBuilders.put("/properties/{id}", property.getPropertyId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(property.getName())))
+                .andReturn().getResponse().getContentAsString();
     }
 
     @Test
-    public void search(){
-        PropertySearchRequest request = new PropertySearchRequest();
+    public void search() throws Exception {
+        property = new Property();
+        property.setPropertyId(1);
+        property.setLocation("ahmedabad");
+        property.setVerified(false);
+        property.setType("bunglow");
+        property.setPrice(7000000);
+        property.setName("4bhk");
+
+        request = new PropertySearchRequest();
         request.setKeyword("ahmedabad");
         request.setPageNo(1);
         request.setPageSize(5);
@@ -106,13 +169,33 @@ public class JUnitControllerTestCases {
         request.setSortOrder("ASC");
         request.setPropertyId(1);
 
-        Mockito.when(propertyService.getAllProperties(request)).thenReturn(Collections.singletonList(propertySearchResponse));
-        ResponseEntity<PropertySearchResponseWrapper> list = propertyController.getAllProperties(request);
-        Assertions.assertEquals(1, Objects.requireNonNull(list.getBody()).getProperties().size());
+        propertySearchResponse = new PropertySearchResponse();
+        propertySearchResponse.setId(property.getPropertyId());
+        propertySearchResponse.setLocation(property.getLocation());
+        propertySearchResponse.setVerified(property.isVerified());
+        propertySearchResponse.setType(property.getType());
+        propertySearchResponse.setName(property.getName());
+        propertySearchResponse.setPrice(property.getPrice());
+
+        List<PropertySearchResponse> propertySearchResponseList = new ArrayList<>();
+        objectMapper = new ObjectMapper();
+        jsonString = objectMapper.writeValueAsString(request);
+
+        Mockito.when(propertyService.getAllProperties(request)).thenReturn(propertySearchResponseList);
+        mockMvc.perform(MockMvcRequestBuilders.post("/properties/_list")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(request.getKeyword())))
+                .andReturn().getResponse().getContentAsString();
     }
 
     @Test
-    public void getById(){
+    public void getById() throws Exception {
+        property = new Property();
+        propertySearchResponse = new PropertySearchResponse();
+
         property.setPropertyId(1);
         property.setLocation("ahmedabad");
         property.setVerified(true);
@@ -126,8 +209,17 @@ public class JUnitControllerTestCases {
         propertySearchResponse.setType(property.getType());
         propertySearchResponse.setLocation(property.getLocation());
         propertySearchResponse.setVerified(property.isVerified());
-        Mockito.when(propertyService.getPropertyById(1)).thenReturn(propertySearchResponse);
-        PropertySearchResponse propertySearchResponse1 = propertyController.getById(1);
-        Assertions.assertEquals("bunglow", propertySearchResponse1.getType());
+
+        objectMapper = new ObjectMapper();
+        jsonString = objectMapper.writeValueAsString(propertyRequest);
+
+        Mockito.when(propertyService.getPropertyById(property.getPropertyId())).thenReturn(propertySearchResponse);
+        mockMvc.perform(MockMvcRequestBuilders.get("/properties/{id}", propertySearchResponse.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(propertySearchResponse.getName())))
+                .andReturn().getResponse().getContentAsString();
     }
 }
